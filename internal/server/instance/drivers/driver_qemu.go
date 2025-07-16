@@ -4256,6 +4256,7 @@ func (d *qemu) addRootDriveConfig(qemuDev map[string]any, mountInfo *storagePool
 		Opts:       rootDriveConf.Opts,
 		TargetPath: rootDriveConf.TargetPath,
 		Limits:     rootDriveConf.Limits,
+		Attached:   true,
 	}
 
 	if d.storagePool.Driver().Info().Remote {
@@ -4671,7 +4672,7 @@ func (d *qemu) addDriveConfig(qemuDev map[string]any, bootIndexes map[string]int
 			blockDev["filename"] = fmt.Sprintf("/dev/fdset/%d", info.ID)
 		}
 
-		err := m.AddBlockDevice(blockDev, qemuDev)
+		err := m.AddBlockDevice(blockDev, qemuDev, driveConf.Attached)
 		if err != nil {
 			return fmt.Errorf("Failed adding block device for disk device %q: %w", driveConf.DevName, err)
 		}
@@ -7393,7 +7394,7 @@ func (d *qemu) migrateSendLive(pool storagePools.Pool, clusterMoveSourceName str
 				"driver":   "file",
 				"filename": fmt.Sprintf("/dev/fdset/%d", info.ID),
 			},
-		}, nil)
+		}, nil, true)
 		if err != nil {
 			return fmt.Errorf("Failed adding migration storage snapshot block device: %w", err)
 		}
@@ -7536,7 +7537,7 @@ func (d *qemu) migrateSendLive(pool storagePools.Pool, clusterMoveSourceName str
 					"path":     strings.TrimPrefix(listener.Addr().String(), "@"),
 				},
 			},
-		}, nil)
+		}, nil, true)
 		if err != nil {
 			return fmt.Errorf("Failed adding NBD device: %w", err)
 		}
@@ -9469,7 +9470,7 @@ func (d *qemu) checkFeatures(hostArch int, qemuPath string) (map[string]any, err
 		"aio":       "io_uring",
 	}
 
-	err = monitor.AddBlockDevice(blockDev, nil)
+	err = monitor.AddBlockDevice(blockDev, nil, true)
 	if err != nil {
 		logger.Debug("Failed adding block device during VM feature check", logger.Ctx{"err": err})
 	} else {
